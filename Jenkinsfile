@@ -29,16 +29,16 @@ pipeline {
             }
             steps {
                 script {
-                    def isMerged = sh(script: '''
-                        git log --merges -n 1 --pretty=format:'%s' | grep 'Merge branch' || true
+                    def mergeCheck = sh(script: '''
+                        git rev-list -n 1 --ancestry-path HEAD^2..HEAD || true
                     ''', returnStdout: true).trim()
 
-                    if (isMerged.contains('Merge branch')) {
+                    if (mergeCheck) {
                         echo "Merge detected! Running terraform apply..."
                         sh '''
                         terraform apply -auto-approve tfplan
                         '''
-                        slackNotification("Terraform apply successful! ")
+                        slackNotification("Terraform apply successful! ✅")
                     } else {
                         echo "No merge detected. Skipping terraform apply."
                     }
@@ -50,12 +50,12 @@ pipeline {
     post {
         success {
             script {
-                slackNotification("Terraform deployment successful! ")
+                slackNotification("Terraform deployment successful! ✅")
             }
         }
         failure {
             script {
-                slackNotification("Terraform deployment failed! ")
+                slackNotification("Terraform deployment failed! ❌")
             }
         }
     }
